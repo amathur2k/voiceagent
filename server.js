@@ -66,7 +66,7 @@ async function getDebtorData() {
 }
 
 // Replace the hard-coded variables with the function call
-let name, outstandingDebt, dueDate;
+let name, outstandingDebt, dueDate, toCall;
 
 try {
   const debtorData = await getDebtorData();
