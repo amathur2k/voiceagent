@@ -145,9 +145,9 @@ server.post("/summarize-conversation", async (request, reply) => {
         // If it's audio, you might store its transcript somewhere in event.item.transcript
         return {
           role: "user",
-          content: event.item.content[0].type === "input_audio" 
+          content: event.item.content[0]?.type === "input_audio" 
           ? event.item.content[0].transcript 
-          : event.item.content[0].text || "(empty message)",
+          : event.item.content[0]?.text || "(empty message)",
         };
       case "response.audio_transcript.done":
         return {
