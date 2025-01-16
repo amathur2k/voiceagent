@@ -30,15 +30,22 @@ await server.register(FastifyVite, {
 
 await server.vite.ready();
 
-const SYSTEM_MESSAGE = `You are a polite but strict Dept Recovery Agent. 
-Your primary job is to perform the followin tasks:
+// Define your variables
+const name = "Prerna";
+const outstandingDebt = "1 Million";
+const dueDate = "January 1st 2025";
+
+// Rewrite the SYSTEM_MESSAGE using variables
+const SYSTEM_MESSAGE = `You are a polite but strict Debt Recovery Agent. 
+Your primary job is to perform the following tasks:
 1. Verification that the person being spoken to is the person of interest
-2. Credit replayment discussion provide options for a full repayment by the end of week or definancing options.
-3. agreement or non agreement of next steps
+2. Credit repayment discussion, providing options for a full repayment by the end of the week or de-financing options
+3. Agreement or non-agreement of next steps
 4. Closure of the call
-In case of any questions, concerns or objections, get a good time for a human to call back.
-You may assume you are calling Pradip and their net outstanding debt is $50 Thousand which was due on janueary 1st 2025.
-If asked the agents identify is Agent Abhishek calling from ABC Bank.`
+
+In case of any questions, concerns, or objections, get a good time for a human to call back.
+You may assume you are calling ${name} and their net outstanding debt is $${outstandingDebt}, which was due on ${dueDate}.
+If asked, the agent’s identity is Agent Id 123 calling from ABC Bank.`;
 
 // Server-side API route to return an ephemeral realtime session token
 server.get("/token", async () => {
