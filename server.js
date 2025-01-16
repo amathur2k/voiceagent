@@ -126,11 +126,10 @@ server.post("/summarize-conversation", async (request, reply) => {
   //    including text messages, user audio transcripts, and assistant speech.
   //    Adjust event.type checks as needed to match your actual events.
   const conversationEvents = events.filter((event) => [
-    "conversation.item.create", // user text or user-initiated audio
-    "response.message.create",  // assistant text
-    "response.transcription.create", // user audio transcripts
-    "response.speech.create"    // assistant voice responses
+    "response.done"   // assistant voice responses
   ].includes(event.type));
+
+  console.log("[conversationEvents]: ", conversationEvents);
 
   // 2) Convert those events into a single conversation array for summarization.
   //    The role is determined by whether the event was user or assistant,
