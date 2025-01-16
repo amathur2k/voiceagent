@@ -121,6 +121,7 @@ server.get("/token", async () => {
 // Add this after the existing /token endpoint
 server.post("/summarize-conversation", async (request, reply) => {
   const events = request.body.events;
+  console.log("[events]: ", events);
   
   // Filter and format conversation events
   const conversationEvents = events.filter(event => 
@@ -141,6 +142,7 @@ server.post("/summarize-conversation", async (request, reply) => {
       };
     }
   });
+  console.log("[conversation]: ", conversation);
 
   try {
     // Request summary from OpenAI
