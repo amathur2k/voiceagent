@@ -127,10 +127,7 @@ server.post("/summarize-conversation", async (request, reply) => {
   //    including text messages, user audio transcripts, and assistant speech.
   //    Adjust event.type checks as needed to match your actual events.
   const conversationEvents = events.filter((event) => [
-    "conversation.item.created", // user text or user-initiated audio
-    "response.message.create",  // assistant text
-    "response.transcription.create", // user audio transcripts
-    "response.speech.create",    // assistant voice responses
+    "conversation.item.created", 
     "response.audio_transcript.done", 
     "conversation.item.input_audio_transcription.completed"
   ].includes(event.type));
@@ -142,48 +139,22 @@ server.post("/summarize-conversation", async (request, reply) => {
   //    and the text content is gleaned from each event’s structure.
   const conversation = conversationEvents.map((event) => {
     switch (event.type) {
-      case "conversation.item.create":
+      case "conversation.item.created":
         // Typically user text or user-initiated audio
         // event.item.type could be 'message' or 'audio'
         // If it's audio, you might store its transcript somewhere in event.item.transcript
         return {
           role: "user",
-          content:
-            event.item?.type === "audio"
-              ? event.item?.transcript || "(user audio, no transcript)"
-              : event.item?.content?.[0]?.text || "(empty text message)",
+          content: event.item.content[0].type === "input_audio" 
+          ? event.item.content[0].transcript 
+          : event.item.content[0].text || "(empty message)",
         };
-
-      case "response.message.create":
-        // Assistant text
+      case "response.audio_transcript.done":
         return {
-          role: "assistant",
-          content:
-            event.response?.output?.[0]?.content ||
-            event.response?.message ||
-            "(assistant text response not found)",
+          role: "system",
+          content: event.transcript || "(user audio transcript not found)",
         };
-
-      case "response.transcription.create":
-        // Usually user audio transcripts
-        // Some apps store the transcript in event.response?.transcript
-        return {
-          role: "user",
-          content:
-            event.response?.transcript ||
-            "(user audio transcript not found)",
-        };
-
-      case "response.speech.create":
-        // Assistant voice output
-        // Some apps store partial or final text in event.response?.speech or .transcript
-        return {
-          role: "assistant",
-          content:
-            event.response?.transcript ||
-            "(assistant voice, no text transcript available)",
-        };
-
+     
       default:
         return {
           role: "system",
