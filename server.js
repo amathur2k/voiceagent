@@ -34,10 +34,9 @@ await server.vite.ready();
 // Add this function to get data from Google Sheet
 async function getDebtorData() {
   const SPREADSHEET_ID = '1XQl4nbiwvM1jXnrfhLubfu6mMlJkIn-Q7KLN7ZkbWcQ';
-  const doc = new GoogleSpreadsheet(SPREADSHEET_ID);
-  
-  // Use API key authentication instead of service account
-  await doc.useApiKey(process.env.GOOGLE_API_KEY);
+  const doc = new GoogleSpreadsheet(SPREADSHEET_ID, {
+    apiKey: process.env.GOOGLE_API_KEY
+  });
 
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
