@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import FastifyVite from "@fastify/vite";
 import fastifyEnv from "@fastify/env";
+import { GoogleSpreadsheet } from 'google-spreadsheet';
 
 // Fastify + React + Vite configuration
 const server = Fastify({
@@ -30,16 +31,48 @@ await server.register(FastifyVite, {
 
 await server.vite.ready();
 
-// Define your variables
-const name = "Prerna";
-const outstandingDebt = "1 Million";
-const dueDate = "January 1st 2025";
+// Add this function to get data from Google Sheet
+async function getDebtorData() {
+  const SPREADSHEET_ID = '1XQl4nbiwvM1jXnrfhLubfu6mMlJkIn-Q7KLN7ZkbWcQ';
+  const doc = new GoogleSpreadsheet(SPREADSHEET_ID);
+  
+  // Use API key authentication instead of service account
+  await doc.useApiKey(process.env.GOOGLE_API_KEY);
+
+  await doc.loadInfo();
+  const sheet = doc.sheetsByIndex[0];
+  const rows = await sheet.getRows();
+  
+  // Get the first debtor's data (assuming row 2 contains the data, as row 1 has headers)
+  const firstDebtor = rows[0];
+  return {
+    name: firstDebtor.Name,
+    outstandingDebt: firstDebtor['Outstanding Debt'], // Note: matches the column header exactly
+    dueDate: firstDebtor['Due Date']
+  };
+}
+
+// Replace the hard-coded variables with the function call
+let name, outstandingDebt, dueDate;
+
+try {
+  const debtorData = await getDebtorData();
+  name = debtorData.name;
+  outstandingDebt = debtorData.outstandingDebt;
+  dueDate = debtorData.dueDate;
+} catch (error) {
+  console.error('Error fetching data from Google Sheet:', error);
+  // Fallback values in case of error
+  name = "Prerna";
+  outstandingDebt = "50,000";
+  dueDate = "01/01/2025";
+}
 
 // Rewrite the SYSTEM_MESSAGE using variables
 const SYSTEM_MESSAGE = `You are a polite but strict Debt Recovery Agent. 
 Your primary job is to perform the following tasks:
 1. Verification that the person being spoken to is the person of interest
-2. Credit repayment discussion, providing options for a full repayment by the end of the week or de-financing options
+2. Credit repayment discussion, providing options for a full repayment by the end of the week or refinancing options
 3. Agreement or non-agreement of next steps
 4. Closure of the call
 
