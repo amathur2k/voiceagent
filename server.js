@@ -121,6 +121,7 @@ server.get("/token", async () => {
 // Add this after the existing /token endpoint
 server.post("/summarize-conversation", async (request, reply) => {
   const events = request.body.events;
+  console.log("[events]: ", events);
 
   // 1) Filter events to only those that represent either user input or assistant output
   //    including text messages, user audio transcripts, and assistant speech.
