@@ -44,6 +44,8 @@ async function getDebtorData() {
   
   // Get the first debtor's data (assuming row 2 contains the data, as row 1 has headers)
   const firstDebtor = rows[0];
+  console.log('First Debtor Data:', firstDebtor); // Print the first debtor's data to the console
+  
   return {
     name: firstDebtor.Name,
     outstandingDebt: firstDebtor['Outstanding Debt'], // Note: matches the column header exactly
