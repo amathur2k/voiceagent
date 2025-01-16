@@ -128,52 +128,49 @@ server.post("/summarize-conversation", async (request, reply) => {
     (event.type === "response.message.create")
   );
 
+  const conversation = conversationEvents.map(event => {
+    if (event.type === "conversation.item.create") {
+      return {
+        role: "user",
+        content: event.item.content[0].text
+      };
+    } else {
+      return {
+        role: "assistant",
+        content: event.response?.output?.[0]?.content || event.response?.message || ""
+      };
+    }
+  });
+
   try {
-    // Get a new ephemeral token for the summary session
-    const tokenResponse = await fetch("https://api.openai.com/v1/realtime/sessions", {
+    // Request summary from OpenAI
+    const summaryResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-realtime-preview-2024-12-17",
-        instructions: "You are a conversation summarizer. Please provide a concise summary of the conversation that was just completed, focusing on main topics discussed and key outcomes."
-      }),
-    });
-
-    const tokenData = await tokenResponse.json();
-    const EPHEMERAL_KEY = tokenData.client_secret.value;
-
-    // Create the summary request using the correct endpoint
-    const summaryResponse = await fetch("https://api.openai.com/v1/realtime", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${EPHEMERAL_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: conversationEvents.map(event => {
-          if (event.type === "conversation.item.create") {
-            return {
-              role: "user",
-              content: event.item.content[0].text
-            };
-          } else {
-            return {
-              role: "assistant",
-              content: event.response?.output?.[0]?.content || event.response?.message || ""
-            };
+        model: "gpt-4-turbo-preview",
+        messages: [
+          {
+            role: "system",
+            content: "Please provide a concise summary of the following conversation between a user and an AI assistant. Focus on the main topics discussed and key outcomes."
+          },
+          {
+            role: "user",
+            content: JSON.stringify(conversation)
           }
-        })
+        ]
       })
     });
 
-    const summary = await summaryResponse.text();
+    const summaryData = await summaryResponse.json();
+    const summary = summaryData.choices[0].message.content;
     
-    console.log("\n=== Conversation Summary (GPT-4O) ===");
+    console.log("\n=== Conversation Summary ===");
     console.log(summary);
-    console.log("====================================\n");
+    console.log("=========================\n");
 
     return { success: true, summary };
   } catch (error) {
@@ -181,5 +178,4 @@ server.post("/summarize-conversation", async (request, reply) => {
     return reply.status(500).send({ error: "Failed to generate summary" });
   }
 });
-
 await server.listen({ port: process.env.PORT || 3000 });
