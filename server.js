@@ -40,23 +40,28 @@ async function getDebtorData() {
 
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
-  
-  // Get all values including headers
   const rows = await sheet.getRows();
   
-  console.log('Total rows:', rows.length);
-  console.log('First row raw data:', rows[0]._rawData);
-  console.log('First row all properties:', Object.keys(rows[0]));
+  // Find first row where toCall is True
+  let debtorToCall = null;
+  for (const row of rows) {
+    const rawData = row._rawData;
+    if (rawData[3]?.toLowerCase() === 'true') {  // Check if toCall (4th column) is True
+      debtorToCall = row;
+      break;
+    }
+  }
   
-  // Get the first debtor's data
-  const firstDebtor = rows[0];
-  
-  // Try accessing the data using _rawData index
-  const rawData = firstDebtor._rawData;
+  if (!debtorToCall) {
+    throw new Error('No debtors marked for calling found');
+  }
+
+  const rawData = debtorToCall._rawData;
   return {
-    name: rawData[0],  // Assuming name is first column
-    outstandingDebt: rawData[1],  // Assuming debt is second column
-    dueDate: rawData[2]  // Assuming due date is third column
+    name: rawData[0],
+    outstandingDebt: rawData[1],
+    dueDate: rawData[2],
+    toCall: rawData[3]
   };
 }
 
@@ -68,6 +73,7 @@ try {
   name = debtorData.name;
   outstandingDebt = debtorData.outstandingDebt;
   dueDate = debtorData.dueDate;
+  toCall = debtorData.toCall;
   console.log('Debtor Data:', debtorData);
 
 } catch (error) {
