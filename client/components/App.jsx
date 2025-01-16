@@ -60,8 +60,21 @@ export default function App() {
   }
 
   // Stop current session, clean up peer connection and data channel
-  function stopSession() {
+  async function stopSession() {
     if (dataChannel) {
+      // Request summary before closing
+      try {
+        await fetch('/summarize-conversation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ events })
+        });
+      } catch (error) {
+        console.error('Failed to generate summary:', error);
+      }
+      
       dataChannel.close();
     }
     if (peerConnection.current) {

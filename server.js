@@ -118,4 +118,68 @@ server.get("/token", async () => {
   });
 });
 
+// Add this after the existing /token endpoint
+server.post("/summarize-conversation", async (request, reply) => {
+  const events = request.body.events;
+  
+  // Filter and format conversation events
+  const conversationEvents = events.filter(event => 
+    (event.type === "conversation.item.create" && event.item?.type === "message") ||
+    (event.type === "response.message.create")
+  );
+
+  try {
+    // Get a new ephemeral token for the summary session
+    const tokenResponse = await fetch("https://api.openai.com/v1/realtime/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-realtime-preview-2024-12-17",
+        instructions: "You are a conversation summarizer. Please provide a concise summary of the conversation that was just completed, focusing on main topics discussed and key outcomes."
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+    const EPHEMERAL_KEY = tokenData.client_secret.value;
+
+    // Create the summary request
+    const summaryResponse = await fetch("https://api.openai.com/v1/realtime/conversations", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${EPHEMERAL_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: conversationEvents.map(event => {
+          if (event.type === "conversation.item.create") {
+            return {
+              role: "user",
+              content: event.item.content[0].text
+            };
+          } else {
+            return {
+              role: "assistant",
+              content: event.response?.output?.[0]?.content || event.response?.message || ""
+            };
+          }
+        })
+      })
+    });
+
+    const summary = await summaryResponse.text();
+    
+    console.log("\n=== Conversation Summary (GPT-4O) ===");
+    console.log(summary);
+    console.log("====================================\n");
+
+    return { success: true, summary };
+  } catch (error) {
+    console.error("Error generating summary:", error);
+    return reply.status(500).send({ error: "Failed to generate summary" });
+  }
+});
+
 await server.listen({ port: process.env.PORT || 3000 });
