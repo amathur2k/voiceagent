@@ -66,23 +66,7 @@ async function getDebtorData() {
 }
 
 // Replace the hard-coded variables with the function call
-let name, outstandingDebt, dueDate, toCall;
 
-try {
-  const debtorData = await getDebtorData();
-  name = debtorData.name;
-  outstandingDebt = debtorData.outstandingDebt;
-  dueDate = debtorData.dueDate;
-  toCall = debtorData.toCall;
-  console.log('Debtor Data:', debtorData);
-
-} catch (error) {
-  console.error('Error fetching data from Google Sheet:', error);
-  // Fallback values in case of error
-  name = "Spiderman";
-  outstandingDebt = "50,000";
-  dueDate = "01/01/2025";
-}
 
 // Rewrite the SYSTEM_MESSAGE using variables
 const SYSTEM_MESSAGE = `You are a polite but strict Debt Recovery Agent. 
@@ -101,6 +85,7 @@ server.get("/token", async () => {
   let debtorInfo;
   try {
     debtorInfo = await getDebtorData();
+    console.log('Debtor Data:', debtorInfo);
   } catch (error) {
     console.error('Error fetching debtor data:', error);
     // Fallback values
