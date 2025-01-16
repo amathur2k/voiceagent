@@ -79,7 +79,7 @@ try {
 } catch (error) {
   console.error('Error fetching data from Google Sheet:', error);
   // Fallback values in case of error
-  name = "Prerna";
+  name = "Spiderman";
   outstandingDebt = "50,000";
   dueDate = "01/01/2025";
 }
@@ -93,11 +93,24 @@ Your primary job is to perform the following tasks:
 4. Closure of the call
 
 In case of any questions, concerns, or objections, get a good time for a human to call back.
-You may assume you are calling ${name} and their net outstanding debt is $${outstandingDebt}, which was due on ${dueDate}.
 If asked, the agent’s identity is Agent Id 123 calling from ABC Bank.`;
 
 // Server-side API route to return an ephemeral realtime session token
 server.get("/token", async () => {
+  // Get debtor data first
+  let debtorInfo;
+  try {
+    debtorInfo = await getDebtorData();
+  } catch (error) {
+    console.error('Error fetching debtor data:', error);
+    // Fallback values
+    debtorInfo = {
+      name: "Spiderman",
+      outstandingDebt: "50,000",
+      dueDate: "01/01/2025"
+    };
+  }
+
   const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
     method: "POST",
     headers: {
@@ -107,7 +120,8 @@ server.get("/token", async () => {
     body: JSON.stringify({
       model: "gpt-4o-realtime-preview-2024-12-17",
       voice: "verse",
-      instructions: SYSTEM_MESSAGE 
+      instructions: SYSTEM_MESSAGE + 
+        `You may assume you are calling ${debtorInfo.name} and their net outstanding debt is $${debtorInfo.outstandingDebt}, which was due on ${debtorInfo.dueDate}.`
     }),
   });
 
