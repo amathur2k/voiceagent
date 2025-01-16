@@ -44,7 +44,7 @@ async function getDebtorData() {
   
   // Get the first debtor's data (assuming row 2 contains the data, as row 1 has headers)
   const firstDebtor = rows[0];
-  console.log('First Debtor Data:', firstDebtor); // Print the first debtor's data to the console
+  //console.log('First Debtor Data:', firstDebtor); // Print the first debtor's data to the console
   
   return {
     name: firstDebtor.Name,
@@ -61,6 +61,8 @@ try {
   name = debtorData.name;
   outstandingDebt = debtorData.outstandingDebt;
   dueDate = debtorData.dueDate;
+  console.log('Debtor Data:', debtorData);
+
 } catch (error) {
   console.error('Error fetching data from Google Sheet:', error);
   // Fallback values in case of error
