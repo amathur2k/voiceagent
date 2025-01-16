@@ -40,18 +40,23 @@ async function getDebtorData() {
 
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
+  
+  // Get all values including headers
   const rows = await sheet.getRows();
   
-  // Get the first debtor's data (assuming row 2 contains the data, as row 1 has headers)
+  console.log('Total rows:', rows.length);
+  console.log('First row raw data:', rows[0]._rawData);
+  console.log('First row all properties:', Object.keys(rows[0]));
+  
+  // Get the first debtor's data
   const firstDebtor = rows[0];
-  //console.log('First Debtor Data:', firstDebtor); // Print the first debtor's data to the console
-  console.log('First Debtor Name:', firstDebtor.Name);
-  console.log('First Debtor Outstanding Debt:', firstDebtor['Outstanding Debt']);
-  console.log('First Debtor Due Date:', firstDebtor['Due Date']);
+  
+  // Try accessing the data using _rawData index
+  const rawData = firstDebtor._rawData;
   return {
-    name: firstDebtor.Name,
-    outstandingDebt: firstDebtor['Outstanding Debt'], // Note: matches the column header exactly
-    dueDate: firstDebtor['Due Date']
+    name: rawData[0],  // Assuming name is first column
+    outstandingDebt: rawData[1],  // Assuming debt is second column
+    dueDate: rawData[2]  // Assuming due date is third column
   };
 }
 
