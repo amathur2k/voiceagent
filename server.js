@@ -121,59 +121,110 @@ server.get("/token", async () => {
 // Add this after the existing /token endpoint
 server.post("/summarize-conversation", async (request, reply) => {
   const events = request.body.events;
-  console.log("[events]: ", events);
-  
-  // Filter and format conversation events
-  const conversationEvents = events.filter(event => 
-    (event.type === "conversation.item.create" && event.item?.type === "message") ||
-    (event.type === "response.message.create")
-  );
 
-  const conversation = conversationEvents.map(event => {
-    if (event.type === "conversation.item.create") {
-      return {
-        role: "user",
-        content: event.item.content[0].text
-      };
-    } else {
-      return {
-        role: "assistant",
-        content: event.response?.output?.[0]?.content || event.response?.message || ""
-      };
+  // 1) Filter events to only those that represent either user input or assistant output
+  //    including text messages, user audio transcripts, and assistant speech.
+  //    Adjust event.type checks as needed to match your actual events.
+  const conversationEvents = events.filter((event) => [
+    "conversation.item.create", // user text or user-initiated audio
+    "response.message.create",  // assistant text
+    "response.transcription.create", // user audio transcripts
+    "response.speech.create"    // assistant voice responses
+  ].includes(event.type));
+
+  // 2) Convert those events into a single conversation array for summarization.
+  //    The role is determined by whether the event was user or assistant,
+  //    and the text content is gleaned from each event’s structure.
+  const conversation = conversationEvents.map((event) => {
+    switch (event.type) {
+      case "conversation.item.create":
+        // Typically user text or user-initiated audio
+        // event.item.type could be 'message' or 'audio'
+        // If it's audio, you might store its transcript somewhere in event.item.transcript
+        return {
+          role: "user",
+          content:
+            event.item?.type === "audio"
+              ? event.item?.transcript || "(user audio, no transcript)"
+              : event.item?.content?.[0]?.text || "(empty text message)",
+        };
+
+      case "response.message.create":
+        // Assistant text
+        return {
+          role: "assistant",
+          content:
+            event.response?.output?.[0]?.content ||
+            event.response?.message ||
+            "(assistant text response not found)",
+        };
+
+      case "response.transcription.create":
+        // Usually user audio transcripts
+        // Some apps store the transcript in event.response?.transcript
+        return {
+          role: "user",
+          content:
+            event.response?.transcript ||
+            "(user audio transcript not found)",
+        };
+
+      case "response.speech.create":
+        // Assistant voice output
+        // Some apps store partial or final text in event.response?.speech or .transcript
+        return {
+          role: "assistant",
+          content:
+            event.response?.transcript ||
+            "(assistant voice, no text transcript available)",
+        };
+
+      default:
+        return {
+          role: "system",
+          content: "(unhandled event)",
+        };
     }
   });
-  console.log("[conversation]: ", conversation);
+
+  console.log("[conversation for summary]:", JSON.stringify(conversation, null, 2));
 
   try {
-    // Request summary from OpenAI
+    // 3) Use GPT-4O to summarize the conversation
+    //    Here we re-use the ephemeral session flow or a direct summarization approach
+    //    via a standard chat endpoint or the realtime endpoint (whichever makes sense).
+    //    For simplicity, let’s use the Chat Completions API with a GPT-4 or GPT-4O model.
     const summaryResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "gpt-4-turbo-preview",
         messages: [
           {
             role: "system",
-            content: "Please provide a concise summary of the following conversation between a user and an AI assistant. Focus on the main topics discussed and key outcomes."
+            content:
+              "You are a conversation summarizer. Please provide a concise summary of the conversation below, focusing on main topics and outcomes.",
           },
           {
             role: "user",
-            content: JSON.stringify(conversation)
-          }
-        ]
-      })
+            content: JSON.stringify(conversation),
+          },
+        ],
+      }),
     });
 
     const summaryData = await summaryResponse.json();
-    const summary = summaryData.choices[0].message.content;
-    
-    console.log("\n=== Conversation Summary ===");
-    console.log(summary);
-    console.log("=========================\n");
 
+    // 4) Extract the summarized text from the response and log it to the server console
+    const summary = summaryData?.choices?.[0]?.message?.content || "(no summary)";
+    console.log("\n=== Conversation Summary (Voice + Text) ===");
+    console.log(summary);
+    console.log("===========================================\n");
+
+    // 5) Return the summary to client if needed
     return { success: true, summary };
   } catch (error) {
     console.error("Error generating summary:", error);
