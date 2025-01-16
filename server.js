@@ -3,6 +3,8 @@ import FastifyVite from "@fastify/vite";
 import fastifyEnv from "@fastify/env";
 
 // Fastify + React + Vite configuration
+// this is a comment
+// this is another comment
 const server = Fastify({
   logger: {
     transport: {
