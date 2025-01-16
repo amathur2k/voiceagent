@@ -145,8 +145,8 @@ server.post("/summarize-conversation", async (request, reply) => {
     const tokenData = await tokenResponse.json();
     const EPHEMERAL_KEY = tokenData.client_secret.value;
 
-    // Create the summary request
-    const summaryResponse = await fetch("https://api.openai.com/v1/realtime/conversations", {
+    // Create the summary request using the correct endpoint
+    const summaryResponse = await fetch("https://api.openai.com/v1/realtime", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${EPHEMERAL_KEY}`,
